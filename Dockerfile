@@ -1,19 +1,38 @@
-FROM python:3-alpine3.15
+# Use a base image
+FROM ubuntu:latest
 
-# Set our working directory
-WORKDIR /usr/src/app
+# Set the working directory
+WORKDIR /app
 
-# Copy requirements.txt first for better cache on later pushes
-COPY requirements.txt requirements.txt
+# Update and install required packages
+RUN apt-get update && \
+    apt-get install -y \
+    build-essential \
+    git \
+    libssl-dev \
+    libnl-3-dev \
+    libnl-genl-3-dev \
+    pkg-config \
+    libpcap-dev \
+    wireless-tools \
+    && rm -rf /var/lib/apt/lists/*
 
-# pip install python deps from requirements.txt on the resin.io build server
-RUN pip install -r requirements.txt
+# Clone and build mdk4
+RUN git clone https://github.com/aircrack-ng/mdk4.git && \
+    cd mdk4 && \
+    make && \
+    make install && \
+    cd ..
 
-# This will copy all files in our root to the working  directory in the container
-COPY ./src/main.py ./
+# Clone and build AWUS036ACH drivers
+RUN git clone https://github.com/aircrack-ng/rtl8812au.git && \
+    cd rtl8812au && \
+    make && \
+    make install && \
+    cd ..
 
-# Enable udevd so that plugged dynamic hardware devices show up in our container.
-ENV UDEV=1
+# Cleanup unnecessary files
+RUN rm -rf mdk4 rtl8812au
 
-# main.py will run when container starts up on the device
-CMD ["python","-u","main.py"]
+# Run the WiFi scan using mdk4
+CMD ["mdk4", "wlan0", "m"] # Change wlan0 to your wireless interface if it differs
