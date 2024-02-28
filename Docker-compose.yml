@@ -1,0 +1,14 @@
+version: '3.6'
+
+services:
+  x8-custom-test:
+    image: blob-opera:latest
+    restart: always
+    tty: true
+    read_only: true
+    user: "63"
+    tmpfs:
+    - /run
+    - /var/lock
+    - /var/log
+    - /tmp
